@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        input[type="number"], select {
+            padding: 8px;
+            font-size: 16px;
+            width: 120px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:disabled {
+            background-color: #ccc;
+        }
+        .message {
+            margin-top: 20px;
+            color: #555;
+        }
+        .rhythm-container, .effect-container {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <input type="number" id="frequency" placeholder="Frequency (Hz)" value="440">
+        <select id="waveType">
+            <option value="sine">Sine</option>
+            <option value="square">Square</option>
+            <option value="sawtooth">Sawtooth</option>
+            <option value="triangle">Triangle</option>
+        </select>
+        <button id="startBtn">Start</button>
+        <button id="pauseBtn" disabled>Pause</button>
+    </div>
+    
+    <div class="rhythm-container">
+        <input type="number" id="bpm" value="120" min="60" max="200">
+        <button id="startRhythmBtn">Start Rhythm</button>
+        <button id="stopRhythmBtn" disabled>Stop Rhythm</button>
+        <div id="rhythmMessage"></div>
+    </div>
+    
+    <div class="effect-container">
+        <select id="filterType">
+            <option value="lowpass">Low-pass Filter</option>
+            <option value="highpass">High-pass Filter</option>
+        </select>
+        <input type="number" id="filterFrequency" value="500" min="20" max="2000">
+        <button id="applyFilterBtn">Apply Filter</button>
+    </div>
+    
+    <div class="message" id="message"></div>
+    
+    <script>
+        let audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let oscillator = null;
+        let isPlaying = false;
+        let isRhythmPlaying = false;
+        let filterNode = null;
+        let rhythmInterval = null;
+
+        // DOM Elements
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const frequencyInput = document.getElementById('frequency');
+        const waveTypeSelect = document.getElementById('waveType');
+        const message = document.getElementById('message');
+        const bpmInput = document.getElementById('bpm');
+        const startRhythmBtn = document.getElementById('startRhythmBtn');
+        const stopRhythmBtn = document.getElementById('stopRhythmBtn');
+        const filterTypeSelect = document.getElementById('filterType');
+        const filterFrequencyInput = document.getElementById('filterFrequency');
+        const rhythmMessage = document.getElementById('rhythmMessage');
+        
+        // Oscillator and Filter Functions
+        function startSound(frequency, waveType) {
+            oscillator = audioContext.createOscillator();
+            oscillator.type = waveType;
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+
+            // Apply filter if it exists
+            if (filterNode) {
+                oscillator.connect(filterNode);
+            } else {
+                oscillator.connect(audioContext.destination);
+            }
+
+            oscillator.start();
+            isPlaying = true;
+            startBtn.disabled = true;
+            pauseBtn.disabled = false;
+            message.textContent = `Now playing: ${frequency} Hz, Wave: ${waveType}`;
+        }
+
+        function stopSound() {
+            if (oscillator) {
+                oscillator.stop();
+                oscillator = null;
+                isPlaying = false;
+                startBtn.disabled = false;
+                pauseBtn.disabled = true;
+                message.textContent = "Sound paused.";
+            }
+        }
+
+        // Rhythm Functions
+        function startRhythm() {
+            const bpm = parseInt(bpmInput.value);
+            if (isNaN(bpm) || bpm < 60 || bpm > 200) {
+                rhythmMessage.textContent = "Please enter a valid BPM (60-200).";
+                return;
+            }
+
+            const interval = 60000 / bpm; // Calculate interval from BPM
+            rhythmInterval = setInterval(() => {
+                if (!isPlaying) {
+                    startSound(parseFloat(frequencyInput.value), waveTypeSelect.value);
+                } else {
+                    stopSound();
+                }
+            }, interval);
+
+            isRhythmPlaying = true;
+            startRhythmBtn.disabled = true;
+            stopRhythmBtn.disabled = false;
+            rhythmMessage.textContent = `Rhythm running at ${bpm} BPM`;
+        }
+
+        function stopRhythm() {
+            if (rhythmInterval) {
+                clearInterval(rhythmInterval);
+            }
+            isRhythmPlaying = false;
+            startRhythmBtn.disabled = false;
+            stopRhythmBtn.disabled = true;
+            rhythmMessage.textContent = "Rhythm stopped.";
+        }
+
+        // Filter Effects
+        function applyFilter() {
+            if (filterNode) {
+                filterNode.disconnect();
+            }
+            const filterType = filterTypeSelect.value;
+            const filterFrequency = parseFloat(filterFrequencyInput.value);
+
+            filterNode = audioContext.createBiquadFilter();
+            filterNode.type = filterType === 'lowpass' ? 'lowpass' : 'highpass';
+            filterNode.frequency.setValueAtTime(filterFrequency, audioContext.currentTime);
+
+            // If sound is already playing, apply the filter
+            if (oscillator) {
+                oscillator.disconnect();
+                oscillator.connect(filterNode);
+                filterNode.connect(audioContext.destination);
+            }
+
+            message.textContent = `${filterType.charAt(0).toUpperCase() + filterType.slice(1)} filter applied at ${filterFrequency} Hz`;
+        }
+
+        // Event Listeners
+        startBtn.addEventListener('click', function() {
+            const frequency = parseFloat(frequencyInput.value);
+            const waveType = waveTypeSelect.value;
+            if (isNaN(frequency) || frequency <= 0) {
+                message.textContent = "Please enter a valid positive frequency!";
+                return;
+            }
+            startSound(frequency, waveType);
+        });
+
+        pauseBtn.addEventListener('click', function() {
+            stopSound();
+        });
+
+        startRhythmBtn.addEventListener('click', startRhythm);
+        stopRhythmBtn.addEventListener('click', stopRhythm);
+        applyFilterBtn.addEventListener('click', applyFilter);
+    </script>
+</body>
+</html>
