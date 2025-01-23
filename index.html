@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Modular Synthesizer with Automation</title>
+  <title>Modular Synthesizer</title>
   <style>
     body { background: #1a1a1a; color: #e0e0e0; font-family: 'Courier New', monospace; margin: 0; padding: 20px; }
     .synth-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; }
@@ -21,6 +21,7 @@
     .led.active { background: #00ff9d; box-shadow: 0 0 10px #00ff9d; }
     .value-display { font-family: 'Courier New', monospace; color: #00ff9d; text-align: right; margin-top: 5px; }
     .automation-control { border-top: 2px solid #3a3a3a; margin-top: 15px; padding-top: 15px; }
+    .automation-label { color: #00ff9d; }
   </style>
 </head>
 <body>
@@ -40,8 +41,8 @@
         <label>Frequency: <span id="frequencyDisplay">440</span> Hz</label>
         <input type="range" id="frequency" min="20" max="2000" value="440">
         <div class="automation-control">
-          <button id="autoFrequency">Auto Frequency</button>
-          <label>Speed: <input type="range" id="frequencySpeed" min="0.1" max="5" step="0.1" value="1"></label>
+          <label class="automation-label">Automation Speed: <span id="frequencySpeedDisplay">0</span></label>
+          <input type="range" id="frequencySpeed" min="0" max="5" step="0.1" value="0">
         </div>
       </div>
     </div>
@@ -51,8 +52,8 @@
         <label>Cutoff: <span id="filterDisplay">1000</span> Hz</label>
         <input type="range" id="filter" min="20" max="5000" value="1000">
         <div class="automation-control">
-          <button id="autoFilter">Auto Filter</button>
-          <label>Speed: <input type="range" id="filterSpeed" min="0.1" max="5" step="0.1" value="1"></label>
+          <label class="automation-label">Automation Speed: <span id="filterSpeedDisplay">0</span></label>
+          <input type="range" id="filterSpeed" min="0" max="5" step="0.1" value="0">
         </div>
       </div>
       <div class="control">
@@ -66,8 +67,8 @@
         <label>Rate: <span id="lfoRateDisplay">2</span> Hz</label>
         <input type="range" id="lfoRate" min="0.1" max="20" step="0.1" value="2">
         <div class="automation-control">
-          <button id="autoLfoRate">Auto LFO Rate</button>
-          <label>Speed: <input type="range" id="lfoRateSpeed" min="0.1" max="5" step="0.1" value="1"></label>
+          <label class="automation-label">Automation Speed: <span id="lfoRateSpeedDisplay">0</span></label>
+          <input type="range" id="lfoRateSpeed" min="0" max="5" step="0.1" value="0">
         </div>
       </div>
       <div class="control">
@@ -95,14 +96,11 @@
     let lfo = null;
     let lfoGain = null;
     let isPlaying = false;
-
-    // Automation state
     const automations = {
-      frequency: { active: false, animation: null },
-      filter: { active: false, animation: null },
-      lfoRate: { active: false, animation: null }
+      frequency: { time: 0, animation: null },
+      filter: { time: 0, animation: null },
+      lfoRate: { time: 0, animation: null }
     };
-
     const controls = {
       waveform: document.getElementById('waveform'),
       frequency: document.getElementById('frequency'),
@@ -113,24 +111,21 @@
       volume: document.getElementById('volume'),
       powerBtn: document.getElementById('powerBtn'),
       powerLed: document.getElementById('powerLed'),
-      // Automation controls
       frequencySpeed: document.getElementById('frequencySpeed'),
       filterSpeed: document.getElementById('filterSpeed'),
-      lfoRateSpeed: document.getElementById('lfoRateSpeed'),
-      autoFrequency: document.getElementById('autoFrequency'),
-      autoFilter: document.getElementById('autoFilter'),
-      autoLfoRate: document.getElementById('autoLfoRate')
+      lfoRateSpeed: document.getElementById('lfoRateSpeed')
     };
-
     const displays = {
       frequency: document.getElementById('frequencyDisplay'),
       filter: document.getElementById('filterDisplay'),
       resonance: document.getElementById('resonanceDisplay'),
       lfoRate: document.getElementById('lfoRateDisplay'),
       lfoDepth: document.getElementById('lfoDepthDisplay'),
-      volume: document.getElementById('volumeDisplay')
+      volume: document.getElementById('volumeDisplay'),
+      frequencySpeed: document.getElementById('frequencySpeedDisplay'),
+      filterSpeed: document.getElementById('filterSpeedDisplay'),
+      lfoRateSpeed: document.getElementById('lfoRateSpeedDisplay')
     };
-
     function initAudio() {
       audioContext = new (window.AudioContext || window.webkitAudioContext)();
       oscillator = audioContext.createOscillator();
@@ -138,28 +133,23 @@
       filter = audioContext.createBiquadFilter();
       lfo = audioContext.createOscillator();
       lfoGain = audioContext.createGain();
-      
       oscillator.type = controls.waveform.value;
       oscillator.frequency.setValueAtTime(controls.frequency.value, audioContext.currentTime);
-      
       filter.type = 'lowpass';
       filter.frequency.setValueAtTime(controls.filter.value, audioContext.currentTime);
       filter.Q.setValueAtTime(controls.resonance.value, audioContext.currentTime);
-      
       lfo.frequency.setValueAtTime(controls.lfoRate.value, audioContext.currentTime);
       lfoGain.gain.setValueAtTime(controls.lfoDepth.value / 100 * 100, audioContext.currentTime);
       gainNode.gain.setValueAtTime(controls.volume.value / 100, audioContext.currentTime);
-      
       lfo.connect(lfoGain);
       lfoGain.connect(oscillator.frequency);
       oscillator.connect(filter);
       filter.connect(gainNode);
       gainNode.connect(audioContext.destination);
-      
       oscillator.start();
       lfo.start();
+      startAllAutomations();
     }
-
     function updateAll() {
       if (!isPlaying) return;
       oscillator.type = controls.waveform.value;
@@ -169,84 +159,64 @@
       lfoGain.gain.setValueAtTime(parseFloat(controls.lfoDepth.value), audioContext.currentTime);
       gainNode.gain.setValueAtTime(controls.volume.value / 100, audioContext.currentTime);
     }
-
-    // Automation functions
-    function automateParameter(param, min, max, speed) {
-      let time = 0;
-      return {
-        start: () => {
-          const animate = () => {
-            time += 0.016;  // Approximately 60fps
-            const value = min + (Math.sin(time * speed) + 1) / 2 * (max - min);
-            controls[param].value = value;
-            displays[param].textContent = Math.round(value);
-            if (isPlaying) {
-              switch(param) {
-                case 'frequency':
-                  oscillator.frequency.setValueAtTime(value, audioContext.currentTime);
-                  break;
-                case 'filter':
-                  filter.frequency.setValueAtTime(value, audioContext.currentTime);
-                  break;
-                case 'lfoRate':
-                  lfo.frequency.setValueAtTime(value, audioContext.currentTime);
-                  break;
-              }
-            }
-            if (automations[param].active) {
-              automations[param].animation = requestAnimationFrame(animate);
-            }
-          };
-          animate();
-        },
-        stop: () => {
+    function automateParameter(param, min, max) {
+      return () => {
+        const speed = parseFloat(controls[param + 'Speed'].value);
+        if (speed === 0) return;
+        automations[param].time += 0.016 * speed;
+        const value = min + (Math.sin(automations[param].time) + 1) / 2 * (max - min);
+        controls[param].value = value;
+        displays[param].textContent = Math.round(value);
+        if (isPlaying) {
+          switch(param) {
+            case 'frequency':
+              oscillator.frequency.setValueAtTime(value, audioContext.currentTime);
+              break;
+            case 'filter':
+              filter.frequency.setValueAtTime(value, audioContext.currentTime);
+              break;
+            case 'lfoRate':
+              lfo.frequency.setValueAtTime(value, audioContext.currentTime);
+              break;
+          }
+        }
+        automations[param].animation = requestAnimationFrame(automateParameter(param, min, max));
+      };
+    }
+    function startAllAutomations() {
+      ['frequency', 'filter', 'lfoRate'].forEach(param => {
+        const minMax = {
+          frequency: [20, 2000],
+          filter: [20, 5000],
+          lfoRate: [0.1, 20]
+        };
+        automateParameter(param, ...minMax[param])();
+      });
+    }
+    ['frequency', 'filter', 'lfoRate'].forEach(param => {
+      controls[param + 'Speed'].addEventListener('input', (e) => {
+        displays[param + 'Speed'].textContent = e.target.value;
+        if (parseFloat(e.target.value) === 0) {
           if (automations[param].animation) {
             cancelAnimationFrame(automations[param].animation);
             automations[param].animation = null;
           }
+        } else if (!automations[param].animation && isPlaying) {
+          const minMax = {
+            frequency: [20, 2000],
+            filter: [20, 5000],
+            lfoRate: [0.1, 20]
+          };
+          automateParameter(param, ...minMax[param])();
         }
-      };
-    }
-
-    // Setup automation controls
-    controls.autoFrequency.addEventListener('click', () => {
-      automations.frequency.active = !automations.frequency.active;
-      controls.autoFrequency.textContent = automations.frequency.active ? 'Stop Auto' : 'Auto Frequency';
-      if (automations.frequency.active) {
-        automateParameter('frequency', 20, 2000, parseFloat(controls.frequencySpeed.value)).start();
-      } else {
-        automations.frequency.stop();
-      }
+      });
     });
-
-    controls.autoFilter.addEventListener('click', () => {
-      automations.filter.active = !automations.filter.active;
-      controls.autoFilter.textContent = automations.filter.active ? 'Stop Auto' : 'Auto Filter';
-      if (automations.filter.active) {
-        automateParameter('filter', 20, 5000, parseFloat(controls.filterSpeed.value)).start();
-      } else {
-        automations.filter.stop();
-      }
-    });
-
-    controls.autoLfoRate.addEventListener('click', () => {
-      automations.lfoRate.active = !automations.lfoRate.active;
-      controls.autoLfoRate.textContent = automations.lfoRate.active ? 'Stop Auto' : 'Auto LFO Rate';
-      if (automations.lfoRate.active) {
-        automateParameter('lfoRate', 0.1, 20, parseFloat(controls.lfoRateSpeed.value)).start();
-      } else {
-        automations.lfoRate.stop();
-      }
-    });
-
-    // Basic control event listeners
     controls.frequency.addEventListener('input', (e) => {
       displays.frequency.textContent = e.target.value;
       if (isPlaying) {
         oscillator.frequency.setValueAtTime(parseFloat(e.target.value), audioContext.currentTime);
       }
     });
-
     controls.powerBtn.addEventListener('click', () => {
       if (!isPlaying) {
         initAudio();
@@ -255,13 +225,9 @@
         controls.powerLed.classList.add('active');
       } else {
         Object.keys(automations).forEach(key => {
-          if (automations[key].active) {
-            automations[key].stop();
-            automations[key].active = false;
-            const buttonId = 'auto' + key.charAt(0).toUpperCase() + key.slice(1);
-            if (controls[buttonId]) {
-              controls[buttonId].textContent = 'Auto ' + key.charAt(0).toUpperCase() + key.slice(1);
-            }
+          if (automations[key].animation) {
+            cancelAnimationFrame(automations[key].animation);
+            automations[key].animation = null;
           }
         });
         audioContext.close();
@@ -271,9 +237,8 @@
         controls.powerLed.classList.remove('active');
       }
     });
-
     Object.keys(controls).forEach(key => {
-      if (key !== 'powerBtn' && key !== 'powerLed' && key !== 'frequency' && !key.startsWith('auto')) {
+      if (key !== 'powerBtn' && key !== 'powerLed' && key !== 'frequency' && !key.endsWith('Speed')) {
         controls[key].addEventListener('input', (e) => {
           if (displays[key]) {
             displays[key].textContent = e.target.value;
