@@ -103,8 +103,6 @@
       document.getElementById('synthContainer').appendChild(module);
       return module;
     }
-
-    // Add a new oscillator
     document.getElementById('addOscillatorBtn').addEventListener('click', () => {
       const module = createOscillatorModule();
       const oscillator = {
@@ -149,33 +147,38 @@
           lfoRate: { time: 0, animation: null }
         }
       };
+      if (isPlaying && audioContext) {
+        setupAudioNodesForOscillator(oscillator);
+        startOscillatorAutomations(oscillator);
+      }
       setupOscillatorControls(oscillator);
       oscillators.push(oscillator);
     });
+    function setupAudioNodesForOscillator(osc) {
+      osc.audioNodes.oscillator = audioContext.createOscillator();
+      osc.audioNodes.gainNode = audioContext.createGain();
+      osc.audioNodes.filter = audioContext.createBiquadFilter();
+      osc.audioNodes.lfo = audioContext.createOscillator();
+      osc.audioNodes.lfoGain = audioContext.createGain();
+      osc.audioNodes.oscillator.type = osc.controls.waveform.value;
+      osc.audioNodes.oscillator.frequency.setValueAtTime(osc.controls.frequency.value, audioContext.currentTime);
+      osc.audioNodes.filter.type = 'lowpass';
+      osc.audioNodes.filter.frequency.setValueAtTime(osc.controls.filter.value, audioContext.currentTime);
+      osc.audioNodes.filter.Q.setValueAtTime(osc.controls.resonance.value, audioContext.currentTime);
+      osc.audioNodes.lfo.frequency.setValueAtTime(osc.controls.lfoRate.value, audioContext.currentTime);
+      osc.audioNodes.lfoGain.gain.setValueAtTime(osc.controls.lfoDepth.value / 100 * 100, audioContext.currentTime);
+      osc.audioNodes.gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+      osc.audioNodes.lfo.connect(osc.audioNodes.lfoGain);
+      osc.audioNodes.lfoGain.connect(osc.audioNodes.oscillator.frequency);
+      osc.audioNodes.oscillator.connect(osc.audioNodes.filter);
+      osc.audioNodes.filter.connect(osc.audioNodes.gainNode);
+      osc.audioNodes.gainNode.connect(audioContext.destination);
+      osc.audioNodes.oscillator.start();
+      osc.audioNodes.lfo.start();
+    }
     function initAudio() {
       audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      oscillators.forEach(osc => {
-        osc.audioNodes.oscillator = audioContext.createOscillator();
-        osc.audioNodes.gainNode = audioContext.createGain();
-        osc.audioNodes.filter = audioContext.createBiquadFilter();
-        osc.audioNodes.lfo = audioContext.createOscillator();
-        osc.audioNodes.lfoGain = audioContext.createGain();
-        osc.audioNodes.oscillator.type = osc.controls.waveform.value;
-        osc.audioNodes.oscillator.frequency.setValueAtTime(osc.controls.frequency.value, audioContext.currentTime);
-        osc.audioNodes.filter.type = 'lowpass';
-        osc.audioNodes.filter.frequency.setValueAtTime(osc.controls.filter.value, audioContext.currentTime);
-        osc.audioNodes.filter.Q.setValueAtTime(osc.controls.resonance.value, audioContext.currentTime);
-        osc.audioNodes.lfo.frequency.setValueAtTime(osc.controls.lfoRate.value, audioContext.currentTime);
-        osc.audioNodes.lfoGain.gain.setValueAtTime(osc.controls.lfoDepth.value / 100 * 100, audioContext.currentTime);
-        osc.audioNodes.gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
-        osc.audioNodes.lfo.connect(osc.audioNodes.lfoGain);
-        osc.audioNodes.lfoGain.connect(osc.audioNodes.oscillator.frequency);
-        osc.audioNodes.oscillator.connect(osc.audioNodes.filter);
-        osc.audioNodes.filter.connect(osc.audioNodes.gainNode);
-        osc.audioNodes.gainNode.connect(audioContext.destination);
-        osc.audioNodes.oscillator.start();
-        osc.audioNodes.lfo.start();
-      });
+      oscillators.forEach(setupAudioNodesForOscillator);
     }
     function updateAll(osc) {
       if (!isPlaying) return;
@@ -215,7 +218,7 @@
         osc.automations[param].animation = requestAnimationFrame(automateParameter(osc, param));
       };
     }
-    function startAllAutomations(osc) {
+    function startOscillatorAutomations(osc) {
       ['frequency', 'filter', 'lfoRate'].forEach(param => {
         automateParameter(osc, param)();
       });
