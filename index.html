@@ -1,197 +1,167 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
-        }
-        .container {
-            margin-top: 20px;
-        }
-        input[type="number"], select {
-            padding: 8px;
-            font-size: 16px;
-            width: 120px;
-            margin-right: 10px;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        button:disabled {
-            background-color: #ccc;
-        }
-        .message {
-            margin-top: 20px;
-            color: #555;
-        }
-        .rhythm-container, .effect-container {
-            margin-top: 20px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modular Synthesizer</title>
+  <style>
+    body { background: #1a1a1a; color: #e0e0e0; font-family: 'Courier New', monospace; margin: 0; padding: 20px; }
+    .synth-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; }
+    .module { background: #2a2a2a; border: 2px solid #3a3a3a; border-radius: 10px; padding: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); }
+    .module h2 { color: #00ff9d; margin-top: 0; border-bottom: 2px solid #3a3a3a; padding-bottom: 10px; }
+    .control { margin: 15px 0; }
+    .control label { display: block; margin-bottom: 5px; color: #00ff9d; }
+    input[type="range"] { width: 100%; background: #3a3a3a; height: 8px; border-radius: 4px; -webkit-appearance: none; appearance: none; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; background: #00ff9d; border-radius: 50%; cursor: pointer; }
+    select { width: 100%; padding: 8px; background: #3a3a3a; color: #e0e0e0; border: 1px solid #4a4a4a; border-radius: 4px; }
+    .button-container { display: flex; gap: 10px; margin-top: 20px; }
+    button { background: #00ff9d; color: #1a1a1a; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; flex: 1; }
+    button:hover { background: #00cc7a; }
+    .led { display: inline-block; width: 12px; height: 12px; background: #333; border-radius: 50%; margin-right: 10px; }
+    .led.active { background: #00ff9d; box-shadow: 0 0 10px #00ff9d; }
+    .value-display { font-family: 'Courier New', monospace; color: #00ff9d; text-align: right; margin-top: 5px; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <input type="number" id="frequency" placeholder="Frequency (Hz)" value="440">
-        <select id="waveType">
-            <option value="sine">Sine</option>
-            <option value="square">Square</option>
-            <option value="sawtooth">Sawtooth</option>
-            <option value="triangle">Triangle</option>
+  <div class="synth-container">
+    <div class="module">
+      <h2>Oscillator</h2>
+      <div class="control">
+        <label>Waveform</label>
+        <select id="waveform">
+          <option value="sine">Sine</option>
+          <option value="square">Square</option>
+          <option value="sawtooth">Sawtooth</option>
+          <option value="triangle">Triangle</option>
         </select>
-        <button id="startBtn">Start</button>
-        <button id="pauseBtn" disabled>Pause</button>
+      </div>
+      <div class="control">
+        <label>Frequency: <span id="freqDisplay">440</span> Hz</label>
+        <input type="range" id="frequency" min="20" max="2000" value="440">
+      </div>
     </div>
-    
-    <div class="rhythm-container">
-        <input type="number" id="bpm" value="120" min="60" max="200">
-        <button id="startRhythmBtn">Start Rhythm</button>
-        <button id="stopRhythmBtn" disabled>Stop Rhythm</button>
-        <div id="rhythmMessage"></div>
+    <div class="module">
+      <h2>Filter</h2>
+      <div class="control">
+        <label>Cutoff: <span id="filterDisplay">1000</span> Hz</label>
+        <input type="range" id="filter" min="20" max="5000" value="1000">
+      </div>
+      <div class="control">
+        <label>Resonance: <span id="resonanceDisplay">0</span></label>
+        <input type="range" id="resonance" min="0" max="20" value="0">
+      </div>
     </div>
-    
-    <div class="effect-container">
-        <select id="filterType">
-            <option value="lowpass">Low-pass Filter</option>
-            <option value="highpass">High-pass Filter</option>
-        </select>
-        <input type="number" id="filterFrequency" value="500" min="20" max="2000">
-        <button id="applyFilterBtn">Apply Filter</button>
+    <div class="module">
+      <h2>LFO</h2>
+      <div class="control">
+        <label>Rate: <span id="lfoRateDisplay">2</span> Hz</label>
+        <input type="range" id="lfoRate" min="0.1" max="20" step="0.1" value="2">
+      </div>
+      <div class="control">
+        <label>Depth: <span id="lfoDepthDisplay">50</span>%</label>
+        <input type="range" id="lfoDepth" min="0" max="100" value="50">
+      </div>
     </div>
-    
-    <div class="message" id="message"></div>
-    
-    <script>
-        let audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        let oscillator = null;
-        let isPlaying = false;
-        let isRhythmPlaying = false;
-        let filterNode = null;
-        let rhythmInterval = null;
+    <div class="module">
+      <h2>Output</h2>
+      <div class="control">
+        <label>Master Volume: <span id="volumeDisplay">50</span>%</label>
+        <input type="range" id="volume" min="0" max="100" value="50">
+      </div>
+      <div class="button-container">
+        <button id="powerBtn">Start</button>
+      </div>
+      <div class="led" id="powerLed"></div>
+    </div>
+  </div>
+  <script>
+    let audioContext = null;
+    let oscillator = null;
+    let gainNode = null;
+    let filter = null;
+    let lfo = null;
+    let lfoGain = null;
+    let isPlaying = false;
+    const controls = {
+      waveform: document.getElementById('waveform'),
+      frequency: document.getElementById('frequency'),
+      filter: document.getElementById('filter'),
+      resonance: document.getElementById('resonance'),
+      lfoRate: document.getElementById('lfoRate'),
+      lfoDepth: document.getElementById('lfoDepth'),
+      volume: document.getElementById('volume'),
+      powerBtn: document.getElementById('powerBtn'),
+      powerLed: document.getElementById('powerLed')
+    };
+    const displays = {
+      freq: document.getElementById('freqDisplay'),
+      filter: document.getElementById('filterDisplay'),
+      resonance: document.getElementById('resonanceDisplay'),
+      lfoRate: document.getElementById('lfoRateDisplay'),
+      lfoDepth: document.getElementById('lfoDepthDisplay'),
+      volume: document.getElementById('volumeDisplay')
+    };
 
-        // DOM Elements
-        const startBtn = document.getElementById('startBtn');
-        const pauseBtn = document.getElementById('pauseBtn');
-        const frequencyInput = document.getElementById('frequency');
-        const waveTypeSelect = document.getElementById('waveType');
-        const message = document.getElementById('message');
-        const bpmInput = document.getElementById('bpm');
-        const startRhythmBtn = document.getElementById('startRhythmBtn');
-        const stopRhythmBtn = document.getElementById('stopRhythmBtn');
-        const filterTypeSelect = document.getElementById('filterType');
-        const filterFrequencyInput = document.getElementById('filterFrequency');
-        const rhythmMessage = document.getElementById('rhythmMessage');
-        
-        // Oscillator and Filter Functions
-        function startSound(frequency, waveType) {
-            oscillator = audioContext.createOscillator();
-            oscillator.type = waveType;
-            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-
-            // Apply filter if it exists
-            if (filterNode) {
-                oscillator.connect(filterNode);
-            } else {
-                oscillator.connect(audioContext.destination);
-            }
-
-            oscillator.start();
-            isPlaying = true;
-            startBtn.disabled = true;
-            pauseBtn.disabled = false;
-            message.textContent = `Now playing: ${frequency} Hz, Wave: ${waveType}`;
-        }
-
-        function stopSound() {
-            if (oscillator) {
-                oscillator.stop();
-                oscillator = null;
-                isPlaying = false;
-                startBtn.disabled = false;
-                pauseBtn.disabled = true;
-                message.textContent = "Sound paused.";
-            }
-        }
-
-        // Rhythm Functions
-        function startRhythm() {
-            const bpm = parseInt(bpmInput.value);
-            if (isNaN(bpm) || bpm < 60 || bpm > 200) {
-                rhythmMessage.textContent = "Please enter a valid BPM (60-200).";
-                return;
-            }
-
-            const interval = 60000 / bpm; // Calculate interval from BPM
-            rhythmInterval = setInterval(() => {
-                if (!isPlaying) {
-                    startSound(parseFloat(frequencyInput.value), waveTypeSelect.value);
-                } else {
-                    stopSound();
-                }
-            }, interval);
-
-            isRhythmPlaying = true;
-            startRhythmBtn.disabled = true;
-            stopRhythmBtn.disabled = false;
-            rhythmMessage.textContent = `Rhythm running at ${bpm} BPM`;
-        }
-
-        function stopRhythm() {
-            if (rhythmInterval) {
-                clearInterval(rhythmInterval);
-            }
-            isRhythmPlaying = false;
-            startRhythmBtn.disabled = false;
-            stopRhythmBtn.disabled = true;
-            rhythmMessage.textContent = "Rhythm stopped.";
-        }
-
-        // Filter Effects
-        function applyFilter() {
-            if (filterNode) {
-                filterNode.disconnect();
-            }
-            const filterType = filterTypeSelect.value;
-            const filterFrequency = parseFloat(filterFrequencyInput.value);
-
-            filterNode = audioContext.createBiquadFilter();
-            filterNode.type = filterType === 'lowpass' ? 'lowpass' : 'highpass';
-            filterNode.frequency.setValueAtTime(filterFrequency, audioContext.currentTime);
-
-            // If sound is already playing, apply the filter
-            if (oscillator) {
-                oscillator.disconnect();
-                oscillator.connect(filterNode);
-                filterNode.connect(audioContext.destination);
-            }
-
-            message.textContent = `${filterType.charAt(0).toUpperCase() + filterType.slice(1)} filter applied at ${filterFrequency} Hz`;
-        }
-
-        // Event Listeners
-        startBtn.addEventListener('click', function() {
-            const frequency = parseFloat(frequencyInput.value);
-            const waveType = waveTypeSelect.value;
-            if (isNaN(frequency) || frequency <= 0) {
-                message.textContent = "Please enter a valid positive frequency!";
-                return;
-            }
-            startSound(frequency, waveType);
+    function initAudio() {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      oscillator = audioContext.createOscillator();
+      gainNode = audioContext.createGain();
+      filter = audioContext.createBiquadFilter();
+      lfo = audioContext.createOscillator();
+      lfoGain = audioContext.createGain();
+      oscillator.type = controls.waveform.value;
+      oscillator.frequency.setValueAtTime(controls.frequency.value, audioContext.currentTime);
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(controls.filter.value, audioContext.currentTime);
+      filter.Q.setValueAtTime(controls.resonance.value, audioContext.currentTime);
+      lfo.frequency.setValueAtTime(controls.lfoRate.value, audioContext.currentTime);
+      lfoGain.gain.setValueAtTime(controls.lfoDepth.value / 100 * 100, audioContext.currentTime);
+      gainNode.gain.setValueAtTime(controls.volume.value / 100, audioContext.currentTime);
+      lfo.connect(lfoGain);
+      lfoGain.connect(oscillator.frequency);
+      oscillator.connect(filter);
+      filter.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      oscillator.start();
+      lfo.start();
+    }
+    function updateAll() {
+      if (!isPlaying) return;
+      oscillator.type = controls.waveform.value;
+      filter.frequency.setValueAtTime(parseFloat(controls.filter.value), audioContext.currentTime);
+      filter.Q.setValueAtTime(parseFloat(controls.resonance.value), audioContext.currentTime);
+      lfo.frequency.setValueAtTime(parseFloat(controls.lfoRate.value), audioContext.currentTime);
+      lfoGain.gain.setValueAtTime(parseFloat(controls.lfoDepth.value), audioContext.currentTime);
+      gainNode.gain.setValueAtTime(controls.volume.value / 100, audioContext.currentTime);
+    }
+    controls.frequency.addEventListener('input', (e) => {
+      displays.freq.textContent = e.target.value;
+      if (isPlaying) {
+        oscillator.frequency.setValueAtTime(parseFloat(e.target.value), audioContext.currentTime);
+      }
+    });
+    controls.powerBtn.addEventListener('click', () => {
+      if (!isPlaying) {
+        initAudio();
+        isPlaying = true;
+        controls.powerBtn.textContent = 'Stop';
+        controls.powerLed.classList.add('active');
+      } else {
+        audioContext.close();
+        audioContext = null;
+        isPlaying = false;
+        controls.powerBtn.textContent = 'Start';
+        controls.powerLed.classList.remove('active');
+      }
+    });
+    Object.keys(controls).forEach(key => {
+      if (key !== 'powerBtn' && key !== 'powerLed' && key !== 'frequency') {
+        controls[key].addEventListener('input', (e) => {
+          displays[key].textContent = e.target.value;
+          updateAll();
         });
-
-        pauseBtn.addEventListener('click', function() {
-            stopSound();
-        });
-
-        startRhythmBtn.addEventListener('click', startRhythm);
-        stopRhythmBtn.addEventListener('click', stopRhythm);
-        applyFilterBtn.addEventListener('click', applyFilter);
-    </script>
+      }
+    });
+  </script>
 </body>
 </html>
