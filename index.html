@@ -5,167 +5,44 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>synth</title>
   <style>
-    body { 
-      background: #1a1a1a; 
-      color: #e0e0e0; 
-      font-family: 'Courier New', monospace; 
-      margin: 0; 
-      padding: 20px; 
-    }
-    .synth-container { 
-      display: flex; 
-      flex-direction: column; 
-      max-width: 1200px; 
-      margin: 0 auto; 
-      gap: 20px; 
-    }
-    .oscillator-group {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 20px;
-      background: #2a2a2a;
-      border-radius: 10px;
-      padding: 20px;
-      position: relative;
-    }
-    .module { 
-      background: #3a3a3a; 
-      border: 2px solid #4a4a4a; 
-      border-radius: 10px; 
-      padding: 15px; 
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); 
-    }
-    .module h2 { 
-      color: #00ff9d; 
-      margin-top: 0; 
-      border-bottom: 2px solid #4a4a4a; 
-      padding-bottom: 10px; 
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .module h2 .oscillator-controls {
-      display: flex;
-      gap: 10px;
-    }
+    body { background: #1a1a1a; color: #e0e0e0; font-family: 'Courier New', monospace; margin: 0; padding: 20px; }
+    .synth-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; }
+    .module { background: #2a2a2a; border: 2px solid #3a3a3a; border-radius: 10px; padding: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); }
+    .module h2 { color: #00ff9d; margin-top: 0; border-bottom: 2px solid #3a3a3a; padding-bottom: 10px; }
     .control { margin: 15px 0; }
-    .control label { 
-      display: block; 
-      margin-bottom: 5px; 
-      color: #00ff9d; 
-    }
-    input[type="range"] { 
-      width: 100%; 
-      background: #4a4a4a; 
-      height: 8px; 
-      border-radius: 4px; 
-      -webkit-appearance: none; 
-      appearance: none; 
-    }
-    input[type="range"]::-webkit-slider-thumb { 
-      -webkit-appearance: none; 
-      width: 20px; 
-      height: 20px; 
-      background: #00ff9d; 
-      border-radius: 50%; 
-      cursor: pointer; 
-    }
-    input[type="number"] { 
-      width: 70px; 
-      padding: 5px; 
-      background: #3a3a3a; 
-      color: #e0e0e0; 
-      border: 1px solid #4a4a4a; 
-      border-radius: 4px; 
-    }
-    .range-inputs { 
-      display: flex; 
-      gap: 10px; 
-      align-items: center; 
-      margin-top: 5px; 
-    }
-    select { 
-      width: 100%; 
-      padding: 8px; 
-      background: #3a3a3a; 
-      color: #e0e0e0; 
-      border: 1px solid #4a4a4a; 
-      border-radius: 4px; 
-    }
-    .button-container { 
-      display: flex; 
-      gap: 10px; 
-      margin-top: 20px; 
-    }
-    button { 
-      background: #00ff9d; 
-      color: #1a1a1a; 
-      border: none; 
-      padding: 10px 20px; 
-      border-radius: 5px; 
-      cursor: pointer; 
-      font-weight: bold; 
-      flex: 1; 
-    }
+    .control label { display: block; margin-bottom: 5px; color: #00ff9d; }
+    input[type="range"] { width: 100%; background: #3a3a3a; height: 8px; border-radius: 4px; -webkit-appearance: none; appearance: none; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; background: #00ff9d; border-radius: 50%; cursor: pointer; }
+    input[type="number"] { width: 70px; padding: 5px; background: #3a3a3a; color: #e0e0e0; border: 1px solid #4a4a4a; border-radius: 4px; }
+    .range-inputs { display: flex; gap: 10px; align-items: center; margin-top: 5px; }
+    select { width: 100%; padding: 8px; background: #3a3a3a; color: #e0e0e0; border: 1px solid #4a4a4a; border-radius: 4px; }
+    .button-container { display: flex; gap: 10px; margin-top: 20px; }
+    button { background: #00ff9d; color: #1a1a1a; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; flex: 1; }
     button:hover { background: #00cc7a; }
-    .volume-mix {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-    .volume-mix label { 
-      color: #00ff9d; 
-      white-space: nowrap; 
-    }
-    .add-oscillator {
-      background: #00ff9d;
-      color: #1a1a1a;
-      border: none;
-      padding: 10px;
-      border-radius: 5px;
-      cursor: pointer;
-      position: absolute;
-      top: 10px;
-      right: 10px;
-    }
-    .delete-oscillator {
-      background: #ff4d4d;
-      color: white;
-      border: none;
-      padding: 5px 10px;
-      border-radius: 3px;
-      cursor: pointer;
-      font-size: 0.8em;
-    }
+    .led { display: inline-block; width: 12px; height: 12px; background: #333; border-radius: 50%; margin-right: 10px; }
+    .led.active { background: #00ff9d; box-shadow: 0 0 10px #00ff9d; }
+    .value-display { font-family: 'Courier New', monospace; color: #00ff9d; text-align: right; margin-top: 5px; }
+    .automation-control { border-top: 2px solid #3a3a3a; margin-top: 15px; padding-top: 15px; }
+    .automation-label { color: #00ff9d; }
   </style>
 </head>
 <body>
-  <div class="synth-container">
-    <div id="oscillatorsContainer"></div>
-    <div class="module">
-      <h2>Master Output</h2>
-      <div class="control">
-        <label>Master Volume: <span id="masterVolumeDisplay">50</span>%</label>
-        <input type="range" id="masterVolume" min="0" max="100" value="50">
-      </div>
-      <div class="button-container">
-        <button id="powerBtn">Start</button>
-      </div>
-    </div>
+  <div class="synth-container" id="synthContainer">
   </div>
-  <template id="oscillatorTemplate">
-    <div class="oscillator-group">
-      <button class="delete-oscillator">X</button>
-      <div class="module">
-        <h2>
-          Oscillator
-          <div class="oscillator-controls">
-            <div class="volume-mix">
-              <label>Vol:</label>
-              <input type="range" class="oscillator-volume" min="0" max="100" value="50">
-            </div>
-          </div>
-        </h2>
+  <div class="button-container" style="margin: 20px auto; max-width: 1200px;">
+    <button id="addOscillatorBtn">Add Oscillator</button>
+    <button id="powerBtn">Start</button>
+    <div class="led" id="powerLed"></div>
+  </div>
+  <script>
+    let audioContext = null;
+    let isPlaying = false;
+    const oscillators = [];
+    function createOscillatorModule() {
+      const module = document.createElement('div');
+      module.className = 'module';
+      module.innerHTML = `
+        <h2>Oscillator ${oscillators.length + 1}</h2>
         <div class="control">
           <label>Waveform</label>
           <select class="waveform">
@@ -188,11 +65,8 @@
             <input type="range" class="frequencySpeed" min="0" max="5" step="0.1" value="0">
           </div>
         </div>
-      </div>
-      <div class="module">
-        <h2>Filter</h2>
         <div class="control">
-          <label>Cutoff: <span class="filterDisplay">1000</span> Hz</label>
+          <label>Filter Cutoff: <span class="filterDisplay">1000</span> Hz</label>
           <input type="range" class="filter" min="20" max="5000" value="1000">
           <div class="automation-control">
             <label class="automation-label">Filter Automation</label>
@@ -208,11 +82,8 @@
           <label>Resonance: <span class="resonanceDisplay">0</span></label>
           <input type="range" class="resonance" min="0" max="20" value="0">
         </div>
-      </div>
-      <div class="module">
-        <h2>LFO</h2>
         <div class="control">
-          <label>Rate: <span class="lfoRateDisplay">2</span> Hz</label>
+          <label>LFO Rate: <span class="lfoRateDisplay">2</span> Hz</label>
           <input type="range" class="lfoRate" min="0.1" max="20" step="0.1" value="2">
           <div class="automation-control">
             <label class="automation-label">LFO Rate Automation</label>
@@ -225,258 +96,199 @@
           </div>
         </div>
         <div class="control">
-          <label>Depth: <span class="lfoDepthDisplay">50</span>%</label>
+          <label>LFO Depth: <span class="lfoDepthDisplay">50</span>%</label>
           <input type="range" class="lfoDepth" min="0" max="100" value="50">
         </div>
-      </div>
-    </div>
-  </template>
-  <script>
-    class MultiOscillatorSynth {
-      constructor() {
-        this.audioContext = null;
-        this.masterGain = null;
-        this.oscillators = [];
-        this.isPlaying = false;
+      `;
+      document.getElementById('synthContainer').appendChild(module);
+      return module;
+    }
 
-        this.initDOM();
-        this.addOscillator();
-      }
-      initDOM() {
-        this.container = document.getElementById('oscillatorsContainer');
-        this.template = document.getElementById('oscillatorTemplate');
-        this.masterVolumeControl = document.getElementById('masterVolume');
-        this.masterVolumeDisplay = document.getElementById('masterVolumeDisplay');
-        this.powerBtn = document.getElementById('powerBtn');
-        this.powerBtn.addEventListener('click', () => this.togglePower());
-        this.masterVolumeControl.addEventListener('input', () => {
-          this.masterVolumeDisplay.textContent = this.masterVolumeControl.value;
-          if (this.masterGain) {
-            this.masterGain.gain.setValueAtTime(
-              this.masterVolumeControl.value / 100, 
-              this.audioContext.currentTime
-            );
-          }
-        });
-        const addOscillatorBtn = document.createElement('button');
-        addOscillatorBtn.textContent = 'Add Oscillator';
-        addOscillatorBtn.classList.add('add-oscillator');
-        addOscillatorBtn.addEventListener('click', () => this.addOscillator());
-        document.querySelector('.synth-container').prepend(addOscillatorBtn);
-      }
-      addOscillator() {
-        const oscillatorGroup = this.template.content.cloneNode(true);
-        const oscillatorElement = oscillatorGroup.querySelector('.oscillator-group');
-        this.container.appendChild(oscillatorElement);
-        const deleteBtn = oscillatorElement.querySelector('.delete-oscillator');
-        deleteBtn.addEventListener('click', () => {
-          const index = this.oscillators.findIndex(o => o.element === oscillatorElement);
-          if (index !== -1) {
-            this.removeOscillator(index);
-          }
-        });
-        oscillatorElement.querySelectorAll('input, select').forEach(el => {
-          el.addEventListener('input', () => {
-            if (this.isPlaying) {
-              this.updateOscillator(
-                this.oscillators.find(o => o.element === oscillatorElement)
-              );
-            }
-          });
-        });
-        const oscillatorData = {
-          element: oscillatorElement,
+    // Add a new oscillator
+    document.getElementById('addOscillatorBtn').addEventListener('click', () => {
+      const module = createOscillatorModule();
+      const oscillator = {
+        module,
+        controls: {
+          waveform: module.querySelector('.waveform'),
+          frequency: module.querySelector('.frequency'),
+          filter: module.querySelector('.filter'),
+          resonance: module.querySelector('.resonance'),
+          lfoRate: module.querySelector('.lfoRate'),
+          lfoDepth: module.querySelector('.lfoDepth'),
+          frequencySpeed: module.querySelector('.frequencySpeed'),
+          filterSpeed: module.querySelector('.filterSpeed'),
+          lfoRateSpeed: module.querySelector('.lfoRateSpeed'),
+          frequencyMin: module.querySelector('.frequencyMin'),
+          frequencyMax: module.querySelector('.frequencyMax'),
+          filterMin: module.querySelector('.filterMin'),
+          filterMax: module.querySelector('.filterMax'),
+          lfoRateMin: module.querySelector('.lfoRateMin'),
+          lfoRateMax: module.querySelector('.lfoRateMax')
+        },
+        displays: {
+          frequency: module.querySelector('.frequencyDisplay'),
+          filter: module.querySelector('.filterDisplay'),
+          resonance: module.querySelector('.resonanceDisplay'),
+          lfoRate: module.querySelector('.lfoRateDisplay'),
+          lfoDepth: module.querySelector('.lfoDepthDisplay'),
+          frequencySpeed: module.querySelector('.frequencySpeedDisplay'),
+          filterSpeed: module.querySelector('.filterSpeedDisplay'),
+          lfoRateSpeed: module.querySelector('.lfoRateSpeedDisplay')
+        },
+        audioNodes: {
           oscillator: null,
-          gainNode: null,
           filter: null,
           lfo: null,
           lfoGain: null,
-          automations: {
-            frequency: { time: 0, animation: null },
-            filter: { time: 0, animation: null },
-            lfoRate: { time: 0, animation: null }
-          }
-        };
-        this.oscillators.push(oscillatorData);
-        return oscillatorData;
-      }
-      removeOscillator(index) {
-        const oscillator = this.oscillators[index];
-        if (this.isPlaying) {
-          if (oscillator.oscillator) oscillator.oscillator.stop();
-          if (oscillator.lfo) oscillator.lfo.stop();
-          [
-            'oscillator', 'gainNode', 'filter', 'lfo', 'lfoGain'
-          ].forEach(node => {
-            if (oscillator[node]) oscillator[node].disconnect();
-          });
+          gainNode: null
+        },
+        automations: {
+          frequency: { time: 0, animation: null },
+          filter: { time: 0, animation: null },
+          lfoRate: { time: 0, animation: null }
         }
-        Object.values(oscillator.automations).forEach(automation => {
-          if (automation.animation) {
-            cancelAnimationFrame(automation.animation);
+      };
+      setupOscillatorControls(oscillator);
+      oscillators.push(oscillator);
+    });
+    function initAudio() {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      oscillators.forEach(osc => {
+        osc.audioNodes.oscillator = audioContext.createOscillator();
+        osc.audioNodes.gainNode = audioContext.createGain();
+        osc.audioNodes.filter = audioContext.createBiquadFilter();
+        osc.audioNodes.lfo = audioContext.createOscillator();
+        osc.audioNodes.lfoGain = audioContext.createGain();
+        osc.audioNodes.oscillator.type = osc.controls.waveform.value;
+        osc.audioNodes.oscillator.frequency.setValueAtTime(osc.controls.frequency.value, audioContext.currentTime);
+        osc.audioNodes.filter.type = 'lowpass';
+        osc.audioNodes.filter.frequency.setValueAtTime(osc.controls.filter.value, audioContext.currentTime);
+        osc.audioNodes.filter.Q.setValueAtTime(osc.controls.resonance.value, audioContext.currentTime);
+        osc.audioNodes.lfo.frequency.setValueAtTime(osc.controls.lfoRate.value, audioContext.currentTime);
+        osc.audioNodes.lfoGain.gain.setValueAtTime(osc.controls.lfoDepth.value / 100 * 100, audioContext.currentTime);
+        osc.audioNodes.gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+        osc.audioNodes.lfo.connect(osc.audioNodes.lfoGain);
+        osc.audioNodes.lfoGain.connect(osc.audioNodes.oscillator.frequency);
+        osc.audioNodes.oscillator.connect(osc.audioNodes.filter);
+        osc.audioNodes.filter.connect(osc.audioNodes.gainNode);
+        osc.audioNodes.gainNode.connect(audioContext.destination);
+        osc.audioNodes.oscillator.start();
+        osc.audioNodes.lfo.start();
+      });
+    }
+    function updateAll(osc) {
+      if (!isPlaying) return;
+      osc.audioNodes.oscillator.type = osc.controls.waveform.value;
+      osc.audioNodes.filter.frequency.setValueAtTime(parseFloat(osc.controls.filter.value), audioContext.currentTime);
+      osc.audioNodes.filter.Q.setValueAtTime(parseFloat(osc.controls.resonance.value), audioContext.currentTime);
+      osc.audioNodes.lfo.frequency.setValueAtTime(parseFloat(osc.controls.lfoRate.value), audioContext.currentTime);
+      osc.audioNodes.lfoGain.gain.setValueAtTime(parseFloat(osc.controls.lfoDepth.value) / 100 * 100, audioContext.currentTime);
+    }
+    function getAutomationRange(osc, param) {
+      const min = parseFloat(osc.controls[param + 'Min'].value);
+      const max = parseFloat(osc.controls[param + 'Max'].value);
+      return [Math.min(min, max), Math.max(min, max)];
+    }
+    function automateParameter(osc, param) {
+      return () => {
+        const speed = parseFloat(osc.controls[param + 'Speed'].value);
+        if (speed === 0) return;
+        osc.automations[param].time += 0.016 * speed;
+        const [min, max] = getAutomationRange(osc, param);
+        const value = min + (Math.sin(osc.automations[param].time) + 1) / 2 * (max - min);
+        osc.controls[param].value = value;
+        osc.displays[param].textContent = Math.round(value * 100) / 100;
+        if (isPlaying) {
+          switch (param) {
+            case 'frequency':
+              osc.audioNodes.oscillator.frequency.setValueAtTime(value, audioContext.currentTime);
+              break;
+            case 'filter':
+              osc.audioNodes.filter.frequency.setValueAtTime(value, audioContext.currentTime);
+              break;
+            case 'lfoRate':
+              osc.audioNodes.lfo.frequency.setValueAtTime(value, audioContext.currentTime);
+              break;
           }
-        });
-        oscillator.element.remove();
-        this.oscillators.splice(index, 1);
-      }
-      togglePower() {
-        if (!this.isPlaying) {
-          this.startSynth();
-        } else {
-          this.stopSynth();
         }
-      }
-      startSynth() {
-        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        this.masterGain = this.audioContext.createGain();
-        this.masterGain.gain.setValueAtTime(
-          this.masterVolumeControl.value / 100, 
-          this.audioContext.currentTime
-        );
-        this.masterGain.connect(this.audioContext.destination);
-        this.oscillators.forEach(osc => this.initializeOscillator(osc));
-        this.isPlaying = true;
-        this.powerBtn.textContent = 'Stop';
-      }
-      initializeOscillator(osc) {
-        const element = osc.element;
-        osc.oscillator = this.audioContext.createOscillator();
-        osc.gainNode = this.audioContext.createGain();
-        osc.filter = this.audioContext.createBiquadFilter();
-        osc.lfo = this.audioContext.createOscillator();
-        osc.lfoGain = this.audioContext.createGain();
-        osc.oscillator.type = element.querySelector('.waveform').value;
-        osc.oscillator.frequency.setValueAtTime(
-          element.querySelector('.frequency').value, 
-          this.audioContext.currentTime
-        );
-        osc.filter.type = 'lowpass';
-        osc.filter.frequency.setValueAtTime(
-          element.querySelector('.filter').value, 
-          this.audioContext.currentTime
-        );
-        osc.filter.Q.setValueAtTime(
-          element.querySelector('.resonance').value, 
-          this.audioContext.currentTime
-        );
-        osc.lfo.frequency.setValueAtTime(
-          element.querySelector('.lfoRate').value, 
-          this.audioContext.currentTime
-        );
-        osc.lfoGain.gain.setValueAtTime(
-          element.querySelector('.lfoDepth').value / 100, 
-          this.audioContext.currentTime
-        );
-        osc.gainNode.gain.setValueAtTime(
-          element.querySelector('.oscillator-volume').value / 100, 
-          this.audioContext.currentTime
-        );
-        osc.lfo.connect(osc.lfoGain);
-        osc.lfoGain.connect(osc.oscillator.frequency);
-        osc.oscillator.connect(osc.filter);
-        osc.filter.connect(osc.gainNode);
-        osc.gainNode.connect(this.masterGain);
-        osc.oscillator.start();
-        osc.lfo.start();
-        this.startAutomations(osc);
-      }
-      startAutomations(osc) {
-        const element = osc.element;
-        const params = ['frequency', 'filter', 'lfoRate'];
-        params.forEach(param => {
-          const speedControl = element.querySelector(`.${param}Speed`);
-          const speed = parseFloat(speedControl.value);
-          if (speed > 0) {
-            this.animateParameter(osc, param);
-          }
-          speedControl.addEventListener('input', (e) => {
-            const newSpeed = parseFloat(e.target.value);
-            element.querySelector(`.${param}SpeedDisplay`).textContent = newSpeed;
+        osc.automations[param].animation = requestAnimationFrame(automateParameter(osc, param));
+      };
+    }
+    function startAllAutomations(osc) {
+      ['frequency', 'filter', 'lfoRate'].forEach(param => {
+        automateParameter(osc, param)();
+      });
+    }
+    function setupOscillatorControls(osc) {
+      ['frequency', 'filter', 'lfoRate'].forEach(param => {
+        osc.controls[param + 'Speed'].addEventListener('input', (e) => {
+          osc.displays[param + 'Speed'].textContent = e.target.value;
+          if (parseFloat(e.target.value) === 0) {
             if (osc.automations[param].animation) {
               cancelAnimationFrame(osc.automations[param].animation);
               osc.automations[param].animation = null;
             }
-            if (newSpeed > 0 && this.isPlaying) {
-              this.animateParameter(osc, param);
+          } else if (!osc.automations[param].animation && isPlaying) {
+            automateParameter(osc, param)();
+          }
+        });
+        osc.controls[param + 'Min'].addEventListener('input', (e) => {
+          const min = parseFloat(e.target.value);
+          const max = parseFloat(osc.controls[param + 'Max'].value);
+          if (min > max) {
+            osc.controls[param + 'Max'].value = min;
+          }
+        });
+        osc.controls[param + 'Max'].addEventListener('input', (e) => {
+          const max = parseFloat(e.target.value);
+          const min = parseFloat(osc.controls[param + 'Min'].value);
+          if (max < min) {
+            osc.controls[param + 'Min'].value = max;
+          }
+        });
+      });
+      osc.controls.frequency.addEventListener('input', (e) => {
+        osc.displays.frequency.textContent = e.target.value;
+        if (isPlaying) {
+          osc.audioNodes.oscillator.frequency.setValueAtTime(parseFloat(e.target.value), audioContext.currentTime);
+        }
+      });
+      Object.keys(osc.controls).forEach(key => {
+        if (key !== 'frequency' && !key.endsWith('Speed') && !key.endsWith('Min') && !key.endsWith('Max')) {
+          osc.controls[key].addEventListener('input', (e) => {
+            if (osc.displays[key]) {
+              osc.displays[key].textContent = e.target.value;
+            }
+            updateAll(osc);
+          });
+        }
+      });
+    }
+    document.getElementById('powerBtn').addEventListener('click', () => {
+      if (!isPlaying) {
+        initAudio();
+        isPlaying = true;
+        document.getElementById('powerBtn').textContent = 'Stop';
+        document.getElementById('powerLed').classList.add('active');
+        oscillators.forEach(osc => startAllAutomations(osc));
+      } else {
+        oscillators.forEach(osc => {
+          Object.keys(osc.automations).forEach(key => {
+            if (osc.automations[key].animation) {
+              cancelAnimationFrame(osc.automations[key].animation);
+              osc.automations[key].animation = null;
             }
           });
+          osc.audioNodes.oscillator.stop();
+          osc.audioNodes.lfo.stop();
         });
+        audioContext.close();
+        audioContext = null;
+        isPlaying = false;
+        document.getElementById('powerBtn').textContent = 'Start';
+        document.getElementById('powerLed').classList.remove('active');
       }
-      animateParameter(osc, param) {
-        const element = osc.element;
-        return () => {
-          const speedControl = element.querySelector(`.${param}Speed`);
-          const speed = parseFloat(speedControl.value);
-          if (speed === 0) return;
-          osc.automations[param].time += 0.016 * speed;
-          const minInput = element.querySelector(`.${param}Min`);
-          const maxInput = element.querySelector(`.${param}Max`);
-          const min = parseFloat(minInput.value);
-          const max = parseFloat(maxInput.value);
-          const value = min + (Math.sin(osc.automations[param].time) + 1) / 2 * (max - min);
-          element.querySelector(`.${param}`).value = value;
-          element.querySelector(`.${param}Display`).textContent = Math.round(value * 100) / 100;
-          if (this.isPlaying) {
-            switch(param) {
-              case 'frequency':
-                osc.oscillator.frequency.setValueAtTime(value, this.audioContext.currentTime);
-                break;
-              case 'filter':
-                osc.filter.frequency.setValueAtTime(value, this.audioContext.currentTime);
-                break;
-              case 'lfoRate':
-                osc.lfo.frequency.setValueAtTime(value, this.audioContext.currentTime);
-                break;
-            }
-          }
-          osc.automations[param].animation = requestAnimationFrame(
-            () => this.animateParameter(osc, param)()
-          );
-        };
-      }
-      updateOscillator(osc) {
-        const element = osc.element;
-        if (!this.isPlaying) return;
-        osc.oscillator.type = element.querySelector('.waveform').value;
-        osc.oscillator.frequency.setValueAtTime(
-          parseFloat(element.querySelector('.frequency').value), 
-          this.audioContext.currentTime
-        );
-        osc.filter.frequency.setValueAtTime(
-          parseFloat(element.querySelector('.filter').value), 
-          this.audioContext.currentTime
-        );
-        osc.filter.Q.setValueAtTime(
-          parseFloat(element.querySelector('.resonance').value), 
-          this.audioContext.currentTime
-        );
-        osc.lfo.frequency.setValueAtTime(
-          parseFloat(element.querySelector('.lfoRate').value), 
-          this.audioContext.currentTime
-        );
-        osc.lfoGain.gain.setValueAtTime(
-          parseFloat(element.querySelector('.lfoDepth').value), 
-          this.audioContext.currentTime
-        );
-        osc.gainNode.gain.setValueAtTime(
-          element.querySelector('.oscillator-volume').value / 100, 
-          this.audioContext.currentTime
-        );
-      }
-      stopSynth() {
-        this.oscillators.forEach((osc, index) => {
-          this.removeOscillator(index);
-        });
-        if (this.audioContext) {
-          this.audioContext.close();
-          this.audioContext = null;
-        }
-        this.isPlaying = false;
-        this.powerBtn.textContent = 'Start';
-      }
-    }
-    document.addEventListener('DOMContentLoaded', () => {
-      new MultiOscillatorSynth();
     });
   </script>
 </body>
