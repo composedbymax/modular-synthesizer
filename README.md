@@ -1,8 +1,8 @@
 # Custom Synthesizer
-A web-based synthesizer allowing users to create oscillators, modify waveforms, and apply audio effects like frequency modulation, filter automation, and more. Built using the Web Audio API for real-time audio generation and control.
+Web-based synthesizer allowing users to create oscillators, and apply audio effects like frequency modulation, filter automation, and more. Built using the Web Audio API for real-time audio generation and control.
 
 ## Features
-- **Oscillator Creation** – Add multiple oscillators to create complex sounds with individual controls.
+- **Oscillator Creation** – Add multiple (automatically compressed) oscillators to create complex sounds with individual controls
 - **Waveform Selection** – Choose from four waveforms: Sine, Square, Sawtooth, and Triangle.
 - **Frequency Control** – Adjust the frequency of each oscillator (20 Hz to 2000 Hz).
 - **Filter Control** – Apply a lowpass filter with adjustable cutoff frequency and resonance.
@@ -20,11 +20,9 @@ A web-based synthesizer allowing users to create oscillators, modify waveforms, 
 ## Getting Started
 1. Clone the repository:
     ```bash
-    git clone https://github.com/yourusername/custom-synthesizer.git
+    git clone https://github.com/composedbymax/modular-synthesizer
     ```
-2. Open the `index.html` file in a modern web browser that supports the Web Audio API (Chrome, Firefox, Safari).
-
-Start creating and experimenting with sound!
+2. Open the `index.html`
 
 ## Controls
 
@@ -62,7 +60,6 @@ Start creating and experimenting with sound!
 
 ## Requirements
 - A modern web browser (Chrome, Firefox, Safari).
-
 
 ## Setup & Usage
 1. Clone the repository:

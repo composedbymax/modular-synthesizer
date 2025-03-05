@@ -141,7 +141,7 @@ function setupAudioNodesForOscillator(osc) {
   osc.audioNodes.lfoGain.connect(osc.audioNodes.oscillator.frequency);
   osc.audioNodes.oscillator.connect(osc.audioNodes.filter);
   osc.audioNodes.filter.connect(osc.audioNodes.gainNode);
-  osc.audioNodes.gainNode.connect(audioContext.destination);
+  osc.audioNodes.gainNode.connect(audioContext.compressor);
   osc.audioNodes.oscillator.start();
   osc.audioNodes.lfo.start();
   const volumeValue = parseFloat(osc.controls.volume.value) / 100;
@@ -149,7 +149,23 @@ function setupAudioNodesForOscillator(osc) {
 }
 function initAudio() {
   audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  oscillators.forEach(setupAudioNodesForOscillator);
+  const compressor = audioContext.createDynamicsCompressor();
+  compressor.threshold.value = -24;
+  compressor.knee.value = 30;
+  compressor.ratio.value = 12;
+  compressor.attack.value = 0.003;
+  compressor.release.value = 0.25;
+  const masterGain = audioContext.createGain();
+  masterGain.gain.value = 0.5;
+  compressor.connect(masterGain);
+  masterGain.connect(audioContext.destination);
+  audioContext.compressor = compressor;
+  audioContext.masterGain = masterGain;
+  oscillators.forEach(osc => {
+    setupAudioNodesForOscillator(osc);
+    osc.audioNodes.gainNode.disconnect();
+    osc.audioNodes.gainNode.connect(audioContext.compressor);
+  });
 }
 function updateAll(osc) {
   if (!isPlaying) return;
